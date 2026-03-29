@@ -2,7 +2,7 @@
 Spotr app backend services
 
 The cleanest way to run this application is to use uv as a dependency management tool.
-It generates a virtual enviroenemtn per application and doesn't require you to download
+It generates a virtual environment per application and doesn't require you to download
 all project dependencies on your machine. The project dependencies live inside  pyproject.toml
 
 1. pip3 install uv

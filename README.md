@@ -10,6 +10,7 @@ all project dependencies on your machine. The project dependencies live inside  
 3. uv sync (installs packages in the virutal env and generates the lock file)
 4. source .venv/bin/activate
 5. You're ready to run the app!
+6. When done, run deactivate in the terminal
 
 If you don't want to go through uv (Ie: you're running everything via pip) then install all dependencies 
 with: pip install -r requirements.txt

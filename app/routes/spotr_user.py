@@ -32,6 +32,9 @@ def update_spotr_user(id: int, updated_spotr_user: SpotrUserUpdate):
         if not existing_spotr_user:
             raise HTTPException(status_code=404, detail="User not found")
 
+        # model_dump --> turns the Pydantic/SQLModel object into a Python dict
+        # exclude_unset = True --> if your request object doesn't include every field from SpotrUserUpdate
+        # it won't append <fieldname> : None, it'll sanitize the object
         update_data = updated_spotr_user.model_dump(exclude_unset=True)
 
         for key, value in update_data.items():

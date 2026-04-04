@@ -17,6 +17,7 @@ class SpotrUserBase(SQLModel):
 
     gender: Optional[str] = None
     age: Optional[int] = None
+    accountSetupComplete: str # incomplete vs active, only active when a gym is selected
 
 class SpotrUserCreate(SpotrUserBase):
     pass
@@ -35,3 +36,8 @@ class SpotrUserUpdate(SQLModel):
 
 class SpotrUserRead(SpotrUserBase):
     id: int
+
+# class SpotrUserGymUpdate(SQLModel):
+#     gym_id: int
+
+#have an update gym model

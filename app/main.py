@@ -1,14 +1,22 @@
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
 
 from app.database.session import create_db_and_tables
 from app.routes.spotr_user import router as user_router
-
-app = FastAPI()
-
-
-@app.on_event("startup")
-def on_startup():
-    create_db_and_tables()
+from app.routes.health import router as health_router
 
 
-app.include_router(user_router)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup logic
+    print("Starting app…")
+    # e.g., connect to DB, initialize cache
+    await create_db_and_tables()
+    app.include_router(user_router)
+    app.include_router(health_router)
+    yield
+    # Shutdown logic
+    print("Stopping app…")
+
+
+app = FastAPI(lifespan=lifespan)

@@ -5,6 +5,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from app.database.session import engine
 from app.models.spotr_user import SpotrUser
 from app.models.gym import Gym
+from app.models.user_gym import UserGym
 from app.schemas.spotr_user import SpotrUserCreate, SpotrUserUpdate, SpotrUserRead
 from app.schemas.gym import GymCreate, GymRead
 
@@ -61,7 +62,10 @@ def add_gym_to_user(id: int, gym_id: int):
         if not spotr_user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        spotr_user.gym = gym_obj.id
+        # create association instead of setting a single gym field
+        user_gym = UserGym(user_id=spotr_user.id, gym_id=gym_obj.id)
+        session.add(user_gym)
+
         spotr_user.accountSetupComplete = "active"
 
         session.commit()

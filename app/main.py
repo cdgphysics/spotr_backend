@@ -18,6 +18,8 @@ async def lifespan(app: FastAPI):
     app.include_router(health_router)
     app.include_router(gym_router)
     app.include_router(user_interest_router)
+    from app.routes.match import router as match_router
+    app.include_router(match_router)
     yield
     # Shutdown logic
     print("Stopping app…")

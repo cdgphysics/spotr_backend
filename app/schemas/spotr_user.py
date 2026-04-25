@@ -9,7 +9,6 @@ class SpotrUserBase(SQLModel):
 
     email: EmailStr
 
-    gym: Optional[int] = None  # FK to Gym.id
 
     city: Optional[str] = None
     state: Optional[str] = None
@@ -26,7 +25,6 @@ class SpotrUserCreate(SpotrUserBase):
 class SpotrUserUpdate(SQLModel):
     name: Optional[str] = None
     email: Optional[EmailStr] = None
-    gym: Optional[int] = None
     city: Optional[str] = None
     state: Optional[str] = None
     zip_code: Optional[str] = None

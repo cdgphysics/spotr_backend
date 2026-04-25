@@ -7,6 +7,7 @@ from app.schemas.gym import GymRead
 
 router = APIRouter(prefix="/gyms", tags=["gyms"])
 
+# gets all gyms, eventually get all gyms within a vicinity
 @router.get("/", response_model=list[GymRead])
 def list_gyms():
     with Session(engine) as session:

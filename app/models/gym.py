@@ -8,3 +8,5 @@ class Gym(SQLModel, table=True):
     city: Optional[str] = None
     state: Optional[str] = None
     address: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None

@@ -8,6 +8,7 @@ from app.models.gym import Gym
 from app.models.user_gym import UserGym
 from app.schemas.spotr_user import SpotrUserCreate, SpotrUserUpdate, SpotrUserRead
 from app.schemas.gym import GymCreate, GymRead
+from app.schemas.user_gym import UserGymCreate, UserGymRead
 
 router = APIRouter(prefix="/spotr_user", tags=["spotr_user"])
 
@@ -51,10 +52,10 @@ def update_spotr_user(id: int, updated_spotr_user: SpotrUserUpdate):
         return existing_spotr_user
 
 
-@router.post("/{id}/gym/{gym_id}", response_model=SpotrUserRead)
-def add_gym_to_user(id: int, gym_id: int):
+@router.post("/{id}/gym", response_model=UserGymRead)
+def add_gym_to_user(id: int, user_gym: UserGymCreate):
     with Session(engine) as session:
-        gym_obj = session.get(Gym, gym_id)
+        gym_obj = session.get(Gym, user_gym.gym_id)
         if not gym_obj:
             raise HTTPException(status_code=404, detail="Gym not found")
 
@@ -62,15 +63,15 @@ def add_gym_to_user(id: int, gym_id: int):
         if not spotr_user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        # create association instead of setting a single gym field
-        user_gym = UserGym(user_id=spotr_user.id, gym_id=gym_obj.id)
-        session.add(user_gym)
+        # create association via schema
+        association = UserGym(user_id=spotr_user.id, gym_id=user_gym.gym_id)
+        session.add(association)
 
         spotr_user.accountSetupComplete = "active"
 
         session.commit()
-        session.refresh(spotr_user)
-        return spotr_user
+        session.refresh(association)
+        return association
 
 
 @router.get("/{id}/gyms", response_model=list[GymRead])

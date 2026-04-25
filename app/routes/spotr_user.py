@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from sqlmodel import Session
+from sqlmodel import Session, select
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.database.session import engine
@@ -71,3 +71,11 @@ def add_gym_to_user(id: int, gym_id: int):
         session.commit()
         session.refresh(spotr_user)
         return spotr_user
+
+
+@router.get("/{id}/gyms", response_model=list[GymRead])
+def list_user_gyms(id: int):
+    with Session(engine) as session:
+        statement = select(Gym).join(UserGym, Gym.id == UserGym.gym_id).where(UserGym.user_id == id)
+        results = session.exec(statement).all()
+        return results

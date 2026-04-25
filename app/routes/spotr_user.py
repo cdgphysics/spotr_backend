@@ -50,19 +50,18 @@ def update_spotr_user(id: int, updated_spotr_user: SpotrUserUpdate):
         return existing_spotr_user
 
 
-@router.post("/{id}/gym", response_model=SpotrUserRead)
-def add_gym_to_user(id: int, gym: GymCreate):
+@router.post("/{id}/gym/{gym_id}", response_model=SpotrUserRead)
+def add_gym_to_user(id: int, gym_id: int):
     with Session(engine) as session:
-        gym_obj = Gym.model_validate(gym)
-        session.add(gym_obj)
-        session.commit()
-        session.refresh(gym_obj)
+        gym_obj = session.get(Gym, gym_id)
+        if not gym_obj:
+            raise HTTPException(status_code=404, detail="Gym not found")
 
         spotr_user = session.get_one(SpotrUser.id, id)
         if not spotr_user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        spotr_user.gym = gym_obj.name
+        spotr_user.gym = gym_obj.id
         spotr_user.accountSetupComplete = "active"
 
         session.commit()

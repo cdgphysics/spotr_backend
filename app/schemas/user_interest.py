@@ -7,7 +7,7 @@ class UserInterestBase(SQLModel):
     days: Optional[str] = None
     start_time: Optional[str] = None
     end_time: Optional[str] = None
-    workout_types: Optional[str] = None
+    workout_types: Optional[list[str]] = None
     min_age: Optional[int] = None
     max_age: Optional[int] = None
 

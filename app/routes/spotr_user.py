@@ -4,7 +4,9 @@ from sqlalchemy.dialects.postgresql import UUID
 
 from app.database.session import engine
 from app.models.spotr_user import SpotrUser
+from app.models.gym import Gym
 from app.schemas.spotr_user import SpotrUserCreate, SpotrUserUpdate, SpotrUserRead
+from app.schemas.gym import GymCreate, GymRead
 
 router = APIRouter(prefix="/spotr_user", tags=["spotr_user"])
 
@@ -46,3 +48,23 @@ def update_spotr_user(id: int, updated_spotr_user: SpotrUserUpdate):
         session.commit()
         session.refresh(existing_spotr_user)
         return existing_spotr_user
+
+
+@router.post("/{id}/gym", response_model=SpotrUserRead)
+def add_gym_to_user(id: int, gym: GymCreate):
+    with Session(engine) as session:
+        gym_obj = Gym.model_validate(gym)
+        session.add(gym_obj)
+        session.commit()
+        session.refresh(gym_obj)
+
+        spotr_user = session.get_one(SpotrUser.id, id)
+        if not spotr_user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        spotr_user.gym = gym_obj.name
+        spotr_user.accountSetupComplete = "active"
+
+        session.commit()
+        session.refresh(spotr_user)
+        return spotr_user

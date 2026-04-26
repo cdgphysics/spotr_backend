@@ -10,6 +10,22 @@ from app.ml.features import build_feature_matrix, build_user_vector
 def _candidate_payload(
     bundle, target_gym_ids: List[int], cluster_rank: int, distance: float
 ) -> Dict[str, Any]:
+    """Build the JSON-serializable payload for a single candidate.
+
+    Args:
+        bundle: The candidate's `UserBundle`.
+        target_gym_ids: Gym IDs the target user belongs to. Used to compute
+            ``common_gyms``.
+        cluster_rank: 1-based rank of the candidate's cluster (1 = closest
+            cluster centroid to the target).
+        distance: Euclidean distance from the candidate's feature vector to
+            the target's feature vector.
+
+    Returns:
+        A dict containing the candidate's basic profile fields, the assigned
+        ``cluster_rank``, the rounded ``distance``, and the list of
+        ``common_gyms``.
+    """
     common_gyms = list(set(target_gym_ids) & set(bundle.gym_ids))
     return {
         "user": {
@@ -27,6 +43,30 @@ def _candidate_payload(
 
 
 def recommend(user_id: int, k: int = DEFAULT_K, limit: int = 20) -> Optional[Dict[str, Any]]:
+    """Generate ranked candidate recommendations for a user.
+
+    Pipeline: load same-gym candidates from the database, build feature
+    vectors, run k-means, rank clusters by Euclidean distance from the
+    cluster centroid to the target user's feature vector, then sort
+    candidates by ``(cluster_rank, intra-cluster distance)``.
+
+    Args:
+        user_id: ID of the target `SpotrUser`.
+        k: Desired number of clusters. Clamped to the candidate pool size by
+            `cluster_candidates`.
+        limit: Maximum number of recommendations to return.
+
+    Returns:
+        A dict with two keys:
+            - ``clusters``: list of cluster summaries
+              (``cluster_id``, ``rank``, ``centroid_distance``, ``size``)
+              ordered from closest to farthest from the target.
+            - ``recommendations``: list of candidate payloads from
+              `_candidate_payload`, sorted by cluster rank then distance,
+              truncated to `limit`.
+        Returns ``None`` if no user exists with `user_id`. When the user has
+        no candidates (no gym, or no shared-gym users), both lists are empty.
+    """
     ctx: Optional[RecommendationContext] = load_recommendation_context(user_id)
     if ctx is None:
         return None

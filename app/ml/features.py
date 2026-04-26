@@ -12,6 +12,17 @@ FEATURE_DIM = 1 + len(WORKOUT_TYPES) + len(DAYS) + 4
 
 
 def _parse_workout_types(raw: Optional[object]) -> List[str]:
+    """Normalize stored workout types into a list of lowercased strings.
+
+    Handles values coming back as a Python list, a JSON-encoded string, or a
+    legacy comma-separated string.
+
+    Args:
+        raw: The raw `workout_types` value as loaded from the database.
+
+    Returns:
+        A list of lowercased workout-type tags. Empty if `raw` is falsy.
+    """
     if not raw:
         return []
     if isinstance(raw, list):
@@ -27,12 +38,29 @@ def _parse_workout_types(raw: Optional[object]) -> List[str]:
 
 
 def _parse_days(raw: Optional[str]) -> List[str]:
+    """Split a comma-separated days string into lowercased tokens.
+
+    Args:
+        raw: Stored `days` string, e.g. ``"mon,tue,wed"``.
+
+    Returns:
+        A list of lowercased day tokens. Empty if `raw` is falsy.
+    """
     if not raw:
         return []
     return [d.strip().lower() for d in raw.split(",") if d.strip()]
 
 
 def _time_to_fraction(t: Optional[str]) -> float:
+    """Convert an ``HH:MM`` time string into a fraction of a day.
+
+    Args:
+        t: Time string in ``HH:MM`` format (or ``None``).
+
+    Returns:
+        ``minutes_since_midnight / 1440`` as a float in ``[0, 1]``. Returns
+        ``0.0`` for missing or malformed inputs.
+    """
     if not t:
         return 0.0
     try:
@@ -43,6 +71,18 @@ def _time_to_fraction(t: Optional[str]) -> float:
 
 
 def _interest_vector(interest: UserInterest) -> np.ndarray:
+    """Encode a single `UserInterest` row as a numeric vector.
+
+    Layout: workout-type one-hot, day one-hot, start-time fraction, end-time
+    fraction, normalized min_age, normalized max_age.
+
+    Args:
+        interest: A `UserInterest` row.
+
+    Returns:
+        A 1-D ``float32`` array of length ``FEATURE_DIM - 1`` (excluding the
+        user's own age, which is added in `build_user_vector`).
+    """
     vec = np.zeros(FEATURE_DIM - 1, dtype=np.float32)
     offset = 0
 
@@ -64,7 +104,18 @@ def _interest_vector(interest: UserInterest) -> np.ndarray:
 
 
 def build_user_vector(bundle: UserBundle) -> np.ndarray:
-    """Aggregate a user's interests (mean) plus normalized age into a single vector."""
+    """Build a single feature vector for a user.
+
+    The first feature is the user's age (normalized by 100). The remaining
+    features are the mean of `_interest_vector` over all of the user's
+    `UserInterest` rows. Users with no interests get a zero tail.
+
+    Args:
+        bundle: The user's `UserBundle` (user row plus their interests).
+
+    Returns:
+        A 1-D ``float32`` array of length `FEATURE_DIM`.
+    """
     age = (bundle.user.age or 0) / 100.0
     if bundle.interests:
         stacked = np.stack([_interest_vector(i) for i in bundle.interests])
@@ -75,6 +126,15 @@ def build_user_vector(bundle: UserBundle) -> np.ndarray:
 
 
 def build_feature_matrix(bundles: List[UserBundle]) -> np.ndarray:
+    """Stack user vectors into a 2-D feature matrix suitable for clustering.
+
+    Args:
+        bundles: Candidate `UserBundle` instances to encode.
+
+    Returns:
+        A ``float32`` array of shape ``(len(bundles), FEATURE_DIM)``. When
+        `bundles` is empty, returns a ``(0, FEATURE_DIM)`` array.
+    """
     if not bundles:
         return np.zeros((0, FEATURE_DIM), dtype=np.float32)
     return np.stack([build_user_vector(b) for b in bundles]).astype(np.float32)

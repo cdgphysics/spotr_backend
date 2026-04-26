@@ -11,6 +11,14 @@ from app.models.user_interest import UserInterest
 
 @dataclass
 class UserBundle:
+    """A user with the data needed to score them as a recommendation.
+
+    Attributes:
+        user: The `SpotrUser` row.
+        interests: All `UserInterest` rows belonging to the user.
+        gym_ids: IDs of gyms the user is associated with via `UserGym`.
+    """
+
     user: SpotrUser
     interests: List[UserInterest] = field(default_factory=list)
     gym_ids: List[int] = field(default_factory=list)
@@ -18,11 +26,34 @@ class UserBundle:
 
 @dataclass
 class RecommendationContext:
+    """The hydrated input the recommender works on.
+
+    Attributes:
+        target: The user we are generating recommendations for.
+        candidates: Other users that share at least one gym with the target.
+    """
+
     target: UserBundle
     candidates: List[UserBundle] = field(default_factory=list)
 
 
 def load_recommendation_context(user_id: int) -> Optional[RecommendationContext]:
+    """Load the target user and same-gym candidates from the database.
+
+    Pulls the target user, their gym memberships, their interests, the set of
+    other users that share at least one gym with the target (filtered to
+    accounts with `accountSetupComplete == "active"`), and all interests/gym
+    memberships for those candidates.
+
+    Args:
+        user_id: ID of the target `SpotrUser`.
+
+    Returns:
+        A `RecommendationContext` populated with the target and candidate
+        bundles. Returns `None` if no user exists with `user_id`. If the
+        target has no gyms or no candidates share a gym, the returned context
+        contains an empty `candidates` list.
+    """
     with Session(engine) as session:
         target = session.get(SpotrUser, user_id)
         if not target:
